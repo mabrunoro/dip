@@ -1,0 +1,12 @@
+.DS_Store
+*docx
+*.doc
+*.pdf
+*.png
+*.jiff
+*.gif
+*.jpg
+*.pages
+*.tif
+*.tiff
+bkp/
