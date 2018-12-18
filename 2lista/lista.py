@@ -202,15 +202,85 @@ def moments(im):
 	print('6th:', (m20 - m02) * (math.pow(m30 + m12,2) - math.pow(m21 + m03,2)) + 4*m11 * (m30 + m12) * (m21 + m03))
 	print('7th:', (3*m21 - m03)*(m30 + m12)*(math.pow(m30 + m12,2) - 3*math.pow(m21 + m03,2)) + (3*m12 - m30)*(m21 + m03)*(3*math.pow(m30 + m12,2) - math.pow(m21 + m03,2)))
 
-def fronteira(im):
-	b = []
+def pbranco(im):
 	for i in range(im.shape[0]):
 		for j in range(im.shape[1]):
 			if(im[i,j] > 225):
-				b.append((i,j))
-				break
+				return (i,j)
+
+# 3  2  1
+# 4  X  0
+# 5  6  7
+def fronteira(im):
+	i,j = pbranco(im)	# search for the first white dot
+	b = [(i,j)]
+	prev = 3
 	while(True):
-		;
+		prev = (prev + 1) % 8
+		if((i == 0) and (prev >= 3) and (prev <= 5)):
+			prev = 6
+		elif((i == (im.shape[0] - 1)) and ((prev == 7) or (prev == 0) or (prev == 1))):
+			prev = 2
+		if((j == 0) and (prev >= 1) and (prev <= 3)):
+			prev = 4
+			if(i == 0):
+				prev = 6
+		elif((j == (im.shape[1] - 1)) and (prev >= 5) and (prev <= 7)):
+			prev = 0
+			if(i == (im.shape[0] - 1)):
+				prev = 2
+		tup = (i,j)
+		if(prev == 0):
+			tup = (i+1,j)
+		elif(prev == 1):
+			tup = (i+1,j-1)
+		elif(prev == 2):
+			tup = (i,j-1)
+		elif(prev == 3):
+			tup = (i-1,j-1)
+		elif(prev == 4):
+			tup = (i-1,j)
+		elif(prev == 5):
+			tup = (i-1,j+1)
+		elif(prev == 6):
+			tup = (i,j+1)
+		elif(prev == 7):
+			tup = (i+1,j+1)
+		else:
+			print('error:',b,prev)
+			return b
+		if(im[tup] >= 225):
+			if(b[0] == tup):
+				return b
+			elif(tup in b):
+				print("error:",b,tup)
+				return b
+			else:
+				b.append(tup)
+				i,j = tup
+				prev = (prev + 4) % 8
+	return b
+
+def complexar(v):
+	return np.array([complex(i,j) for i,j in v])
+
+def descomplexar(v):
+	return np.array([(int(i.real),int(i.imag)) for i in v])
+
+def descritores(v,inv=False,P=0):
+	if(inv):
+		# a = []
+		# if(P==0):
+		# 	P = v.shape[0]
+		# a = [np.rint(np.sum([v[u]*np.exp(math.pi*2j*u*k/P) for u in range(P)])) for k in range(v.shape[0])]
+		a = np.fft.ifft2(np.fft.ifftshift(v),axes=(-1,))
+		# a = [np.rint(np.sum([v[k-1+(P//2)+((v.shape[0]-P)//2)]*np.exp(math.pi*2j*(i+1)*k/P) for k in range(1-(P//2),1+(P//2))])) for i in range(v.shape[0])]
+	else:
+		# P = v.shape[0]
+		# a = [np.sum([v[k]*np.exp(-2j*math.pi*(u+1)*k/P) for k in range(P)]) for u in range(P)]
+		a = np.fft.fftshift(np.fft.fft2(v,axes=(-1,)))
+		# a = [np.sum([v[i]*np.exp(-2j*math.pi*k*(i+1)/P) for i in range(P)])/P for k in range(1-(P//2),(P//2)+1)]
+	return np.array(a)
 
 
 def q1(path):
@@ -248,6 +318,7 @@ def q2(path):
 	bordas = (res3[res3.shape[0]//2,:] > 0).sum()
 	print('Number of white pixels horizontally in mid vertical:',bordas)
 	print('Therefore, the number of matches is:',bordas//2)
+	print('Number of white pixels:',np.unique(res2, return_counts=True)[1][1])
 
 
 def q3(path):
@@ -300,7 +371,7 @@ def q4(path):
 	args = np.argwhere(res3 > 220)
 	argsv = args[:,1] <= (4*(65 + 91))
 	argsv = np.logical_or(argsv, args[:,1] >= (4*(55 + 91)))
-	argsv = np.logical_or(argsv, args[:,1] >= (4*(91 - 60)))
+	argsv = np.logical_or(argsv, args[:,1] >= (4*(91 - 65)))
 	argsv = np.logical_or(argsv, args[:,1] <= (4*(91 - 55)))
 	argsv = np.logical_or(argsv, args[:,1] >= (4*(75 + 91)))
 	argsv = np.logical_or(argsv, args[:,1] <= (4*(91 - 75)))
@@ -363,6 +434,70 @@ def q6(path):
 
 def q7(path):
 	print('\nQ7')
+	img = Image.open('Fig11.10.jpg').convert('L')
+	im = np.array(img)
+	k = otsu(im)
+	im = ((im > k)*255).astype(np.uint8)
+	res = laplaciano(im)
+	Image.fromarray(res).save(path+'output/q7a.jpg')
+	border = fronteira(res)	# obter a fronteira (lista de pixels - x,y)
+	sk = complexar(border)	# obter s(k) = x(k) + jy(k)
+	au = descritores(sk)	# obter descritores - transformada
+	aux = np.array(au)	# copiar vetor
+	# ~10%
+	aux[:(aux.shape[0]//2)-50] = 0
+	aux[(aux.shape[0]//2)+50:] = 0
+	skx = descritores(aux,inv=True)
+	res = descomplexar(skx)
+	imx = np.array(Image.new('L',img.size), dtype=np.uint8)
+	for i,j in res:
+		imx[i,j] = 255
+	Image.fromarray(imx).save(path+'output/q7b.jpg')
+	# ~5%
+	aux[:(aux.shape[0]//2)-25] = 0
+	aux[(aux.shape[0]//2)+25:] = 0
+	skx = descritores(aux,inv=True)
+	res = descomplexar(skx)
+	imx = np.array(Image.new('L',img.size), dtype=np.uint8)
+	for i,j in res:
+		imx[i,j] = 255
+	Image.fromarray(imx).save(path+'output/q7c.jpg')
+	# ~2.5%
+	aux[:(aux.shape[0]//2)-12] = 0
+	aux[(aux.shape[0]//2)+12:] = 0
+	skx = descritores(aux,inv=True)
+	res = descomplexar(skx)
+	imx = np.array(Image.new('L',img.size), dtype=np.uint8)
+	for i,j in res:
+		imx[i,j] = 255
+	Image.fromarray(imx).save(path+'output/q7d.jpg')
+	# ~1.25%
+	aux[:(aux.shape[0]//2)-6] = 0
+	aux[(aux.shape[0]//2)+6:] = 0
+	skx = descritores(aux,inv=True)
+	res = descomplexar(skx)
+	imx = np.array(Image.new('L',img.size), dtype=np.uint8)
+	for i,j in res:
+		imx[i,j] = 255
+	Image.fromarray(imx).save(path+'output/q7e.jpg')
+	# ~0.63%
+	aux[:(aux.shape[0]//2)-3] = 0
+	aux[(aux.shape[0]//2)+3:] = 0
+	skx = descritores(aux,inv=True)
+	res = descomplexar(skx)
+	imx = np.array(Image.new('L',img.size), dtype=np.uint8)
+	for i,j in res:
+		imx[i,j] = 255
+	Image.fromarray(imx).save(path+'output/q7f.jpg')
+	# ~0.28%
+	aux[:(aux.shape[0]//2)-1] = 0
+	aux[(aux.shape[0]//2)+1:] = 0
+	skx = descritores(aux,inv=True)
+	res = descomplexar(skx)
+	imx = np.array(Image.new('L',img.size), dtype=np.uint8)
+	for i,j in res:
+		imx[i,j] = 255
+	Image.fromarray(imx).save(path+'output/q7g.jpg')
 
 
 def main(path='/Users/mthome/Dropbox/UFES/Processamento Digital de Imagens/2lista/'):
@@ -377,7 +512,9 @@ def main(path='/Users/mthome/Dropbox/UFES/Processamento Digital de Imagens/2list
 	# q3(path)
 	# q4(path)
 	# q5(path)
-	q6(path)
+	# q6(path)
+	# q7(path)
+	q8(path)
 
 if(__name__ == '__main__'):
 	main()
