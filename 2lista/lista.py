@@ -211,10 +211,12 @@ def pbranco(im):
 # 3  2  1
 # 4  X  0
 # 5  6  7
-def fronteira(im):
+def fronteira(im,freeman=False):
 	i,j = pbranco(im)	# search for the first white dot
+	if(freeman):
+		f = []
 	b = [(i,j)]
-	prev = 3
+	prev = -1
 	while(True):
 		prev = (prev + 1) % 8
 		if((i == 0) and (prev >= 3) and (prev <= 5)):
@@ -250,16 +252,28 @@ def fronteira(im):
 			print('error:',b,prev)
 			return b
 		if(im[tup] >= 225):
+			if(freeman):
+				f.append(prev)
 			if(b[0] == tup):
-				return b
+				print(b)
+				if(freeman):
+					return f
+				else:
+					return b
 			elif(tup in b):
 				print("error:",b,tup)
-				return b
+				if(freeman):
+					return f
+				else:
+					return b
 			else:
 				b.append(tup)
 				i,j = tup
 				prev = (prev + 4) % 8
-	return b
+	if(freeman):
+		return f
+	else:
+		return b
 
 def complexar(v):
 	return np.array([complex(i,j) for i,j in v])
@@ -498,6 +512,22 @@ def q7(path):
 	for i,j in res:
 		imx[i,j] = 255
 	Image.fromarray(imx).save(path+'output/q7g.jpg')
+
+
+def q8(path):
+	print('\nQ8')
+	img = Image.open('Fig11.10.jpg').convert('L').resize((9,15),Image.NEAREST)
+	im = np.array(img)
+	k = otsu(im)
+	res1 = ((im > k)*255).astype(np.uint8)
+	# Image.fromarray(res1).resize((30,50),resample=Image.NEAREST).show()
+	res2 = laplaciano(res1)
+	img = Image.fromarray(res2)
+	img.save(path+'output/q8a.jpg')
+	res3 = fronteira(res2,freeman=True)
+	print("Freeman's sequence:",res3)
+
+
 
 
 def main(path='/Users/mthome/Dropbox/UFES/Processamento Digital de Imagens/2lista/'):
