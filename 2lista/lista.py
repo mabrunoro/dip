@@ -211,12 +211,10 @@ def pbranco(im):
 # 3  2  1
 # 4  X  0
 # 5  6  7
-def fronteira(im,freeman=False):
+def fronteira(im):
 	i,j = pbranco(im)	# search for the first white dot
-	if(freeman):
-		f = []
 	b = [(i,j)]
-	prev = -1
+	prev = 3
 	while(True):
 		prev = (prev + 1) % 8
 		if((i == 0) and (prev >= 3) and (prev <= 5)):
@@ -252,28 +250,16 @@ def fronteira(im,freeman=False):
 			print('error:',b,prev)
 			return b
 		if(im[tup] >= 225):
-			if(freeman):
-				f.append(prev)
 			if(b[0] == tup):
-				print(b)
-				if(freeman):
-					return f
-				else:
-					return b
+				return b
 			elif(tup in b):
 				print("error:",b,tup)
-				if(freeman):
-					return f
-				else:
-					return b
+				return b
 			else:
 				b.append(tup)
 				i,j = tup
 				prev = (prev + 4) % 8
-	if(freeman):
-		return f
-	else:
-		return b
+	return b
 
 def complexar(v):
 	return np.array([complex(i,j) for i,j in v])
@@ -295,6 +281,61 @@ def descritores(v,inv=False,P=0):
 		a = np.fft.fftshift(np.fft.fft2(v,axes=(-1,)))
 		# a = [np.sum([v[i]*np.exp(-2j*math.pi*k*(i+1)/P) for i in range(P)])/P for k in range(1-(P//2),(P//2)+1)]
 	return np.array(a)
+
+
+# 3  2  1
+# 4  X  0
+# 5  6  7
+def freeman(im):
+	i,j = pbranco(im)	# search for the first white dot
+	f = []
+	b = [(i,j)]
+	prev = -1
+	while(True):
+		prev = (prev + 1) % 8
+		if((j == 0) and (prev >= 3) and (prev <= 5)):
+			prev = 6
+		elif((j == (im.shape[1] - 1)) and ((prev == 7) or (prev == 0) or (prev == 1))):
+			prev = 2
+		if((i == 0) and (prev >= 1) and (prev <= 3)):
+			prev = 4
+			if(j == 0):
+				prev = 6
+		elif((i == (im.shape[0] - 1)) and (prev >= 5) and (prev <= 7)):
+			prev = 0
+			if(j == (im.shape[1] - 1)):
+				prev = 2
+		tup = (i,j)
+		if(prev == 0):
+			tup = (i,j+1)
+		elif(prev == 1):
+			tup = (i-1,j+1)
+		elif(prev == 2):
+			tup = (i-1,j)
+		elif(prev == 3):
+			tup = (i-1,j-1)
+		elif(prev == 4):
+			tup = (i,j-1)
+		elif(prev == 5):
+			tup = (i+1,j-1)
+		elif(prev == 6):
+			tup = (i+1,j)
+		elif(prev == 7):
+			tup = (i+1,j+1)
+		else:
+			print('error:',b,prev)
+			return b
+		if(im[tup] >= 225):
+			f.append(prev)
+			if(b[0] == tup):
+				return f
+			elif(tup in b):
+				return f
+			else:
+				b.append(tup)
+				i,j = tup
+				prev = (prev + 4) % 8
+	return f
 
 
 def q1(path):
@@ -524,10 +565,8 @@ def q8(path):
 	res2 = laplaciano(res1)
 	img = Image.fromarray(res2)
 	img.save(path+'output/q8a.jpg')
-	res3 = fronteira(res2,freeman=True)
+	res3 = freeman(res2)
 	print("Freeman's sequence:",res3)
-
-
 
 
 def main(path='/Users/mthome/Dropbox/UFES/Processamento Digital de Imagens/2lista/'):
