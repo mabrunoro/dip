@@ -208,9 +208,6 @@ def pbranco(im):
 			if(im[i,j] > 225):
 				return (i,j)
 
-# 3  2  1
-# 4  X  0
-# 5  6  7
 def fronteira(im):
 	i,j = pbranco(im)	# search for the first white dot
 	b = [(i,j)]
@@ -569,6 +566,32 @@ def q8(path):
 	print("Freeman's sequence:",res3)
 
 
+def q9(path):
+	print('\nQ9')
+	img = Image.open('11.43.bmp').convert('L')
+	im = np.array(img)
+	coords = np.argwhere(im < 255)
+	mx = np.mean(coords,axis=0)
+	cx = np.cov(coords.T)
+	w,v = np.linalg.eig(cx)
+	A = -v.T
+	# print(w)
+	# print(v)
+	# lower value signs lower angle with horizontal axis
+	# if(w[0] > w[1]):
+	# 	ang = np.arctan(v[0,0]/v[1,0])
+	# else:
+	# 	ang = np.arctan(v[0,1]/v[1,1])
+	# img.rotate(ang*180/math.pi).show()
+	y = np.dot(A,(coords - mx).T).T
+	ycoords = np.rint(y+np.abs(y.min(axis=0))+5)
+	imx = np.array(Image.new('L',img.size), dtype=np.uint8)+255
+	for i in range(ycoords.shape[0]):
+		imx[int(ycoords[i,0]),int(ycoords[i,1])] = im[coords[i,0],coords[i,1]]
+	# Image.fromarray(imx).show()
+	Image.fromarray(imx).save(path+'output/q9a.jpg')
+
+
 def main(path='/Users/mthome/Dropbox/UFES/Processamento Digital de Imagens/2lista/'):
 	try:
 		os.mkdir(path+'output/')
@@ -583,7 +606,8 @@ def main(path='/Users/mthome/Dropbox/UFES/Processamento Digital de Imagens/2list
 	# q5(path)
 	# q6(path)
 	# q7(path)
-	q8(path)
+	# q8(path)
+	q9(path)
 
 if(__name__ == '__main__'):
 	main()
