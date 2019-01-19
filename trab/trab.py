@@ -6,33 +6,40 @@ import math
 import sys
 import os
 
-def erodir(im,es=None,size=5,dot=False):
+def erodir(im,size=5,dot=False):
 	res = np.zeros(im.shape, dtype=np.uint8)
-	if(es is None):
-		side = size//2
-		for i in range(im.shape[0]):
-			for j in range(im.shape[1]):
-				sti = i - side if i > side else 0
-				eni = i + side if i <= (im.shape[0]-side) else im.shape[0]
-				stj = j - side if j > side else 0
-				enj = j + side if j <= (im.shape[1]-side) else im.shape[1]
-				if(dot and (np.sum(im[sti:eni,stj:enj]) == im[i,j])):
-					res[i,j] = im[i,j]
-				else:
-					res[i,j] = np.min(im[sti:eni,stj:enj])
+	side = size//2 if size > 1 else 1
+	for i in range(im.shape[0]):
+		for j in range(im.shape[1]):
+			sti = i - side if i > side else 0
+			eni = i + side if i <= (im.shape[0]-side) else im.shape[0]
+			stj = j - side if j > side else 0
+			enj = j + side if j <= (im.shape[1]-side) else im.shape[1]
+			if(dot and (np.sum(im[sti:eni,stj:enj]) == im[i,j])):
+				res[i,j] = im[i,j]
+			else:
+				res[i,j] = np.min(im[sti:eni,stj:enj])
 	return res
 
-def dilatar(im,es=None,size=5):
+def dilatar(im,size=5):
 	res = np.zeros(im.shape, dtype=np.uint8)
-	if(es is None):
-		side = size//2
-		for i in range(im.shape[0]):
-			for j in range(im.shape[1]):
-				sti = i - side if i >= side else 0
-				eni = i + side if i < (im.shape[0]-side) else im.shape[0]
-				stj = j - side if j >= side else 0
-				enj = j + side if j < (im.shape[1]-side) else im.shape[1]
-				res[i,j] = np.max(im[sti:eni,stj:enj])
+	side = size//2 if size > 1 else 1
+	for i in range(im.shape[0]):
+		for j in range(im.shape[1]):
+			sti = i - side if i >= side else 0
+			eni = i + side if i < (im.shape[0]-side) else im.shape[0]
+			stj = j - side if j >= side else 0
+			enj = j + side if j < (im.shape[1]-side) else im.shape[1]
+			res[i,j] = np.max(im[sti:eni,stj:enj])
+	return res
+
+def afinar(im,size=2):
+	res = np.ones(im.shape, dtype=np.uint8)*np.uint8(255)
+	aux = im < 250
+	for i in range(size,im.shape[0]-size):
+		for j in range(size,im.shape[1]-size):
+			if(np.all(np.any(aux[i-size:i+size+1,j-size:j+size+1,:],axis=2))):
+				res[i,j,:] = im[i-size:i+size+1,j-size:j+size+1,:].mean(axis=1).mean(axis=0)
 	return res
 
 def P12(l,n,MN,k):
@@ -113,9 +120,7 @@ def checkcross(im,x,y,limiar=200):
 				return inters
 		elif(dx > 20):
 			if((im[x+dx-(dy//2),y+dy+(dx//2)] < limiar) and (im[x+dx-(dy//2),y+dy-(dx//2)] < limiar)):
-				ang = np.arctan(dy*180/(dx*math.pi))
-				inters = (dx,dy,ang)
-				# print(ang)
+				inters = (dx,dy)
 				return inters
 
 def slicecross(im,i1,i2,j1,j2,res=None):
@@ -130,62 +135,20 @@ def slicecross(im,i1,i2,j1,j2,res=None):
 
 def lookcross(im):
 	res = np.zeros(im.shape, dtype=np.uint8)
-	# for i in range(10,im.shape[0]-10):
-	# 	for j in range(10,im.shape[1]-10):
-	crosses = []
-	for i in range(3750,4750):
-		for j in range(5750,6500):
-			if(im[i,j] < 200):
-				t = checkcross(im,i,j)
-				if(t is not None):
-					res[i+t[0]-10:i+t[0]+10,j+t[1]-10:j+t[1]+10] = np.uint8(255)
-					crosses.append((i+t[0],j+t[1]))
-					break
-					# res[i-10:i+10,j-10:j+10] = np.uint8(150)
-					# return res,t[2]
-
-		for j in range(400,1150):
-			if(im[i,j] < 200):
-				t = checkcross(im,i,j)
-				if(t is not None):
-					res[i+t[0]-10:i+t[0]+10,j+t[1]-10:j+t[1]+10] = np.uint8(255)
-					crosses.append((i+t[0],j+t[1]))
-					break
-					# res[i-10:i+10,j-10:j+10] = np.uint8(150)
-					# return res,t[2]
-
-	for i in range(1500,2000):
-		for j in range(5750,6500):
-			if(im[i,j] < 200):
-				# k=0
-				# while(im[i,j+k] < 200):
-				# 	k += 1
-				# t = checkcross(im,i,j+k//2)
-				t = checkcross(im,i,j)
-				if(t is not None):
-					res[i+t[0]-10:i+t[0]+10,j+t[1]-10:j+t[1]+10] = np.uint8(255)
-					crosses.append((i+t[0],j+t[1]))
-					break
-					# res[i-10:i+10,j-10:j+10] = np.uint8(150)
-					# return res,t[2]
-
-		for j in range(400,1150):
-			if(im[i,j] < 200):
-				t = checkcross(im,i,j)
-				if(t is not None):
-					res[i+t[0]-10:i+t[0]+10,j+t[1]-10:j+t[1]+10] = np.uint8(255)
-					crosses.append((i+t[0],j+t[1]))
-					break
-					# res[i-10:i+10,j-10:j+10] = np.uint8(150)
-					# return res,t[2]
+	# 2181-1062
+	if(im.shape == (5100, 7014)):
+		crosses = [slicecross(im,3750,4750,5750,6500,res), slicecross(im,3750,4750,400,1150,res), slicecross(im,1500,2000,5750,6500,res), slicecross(im,1500,2000,400,1150,res)]
+	else:
+		crosses = [slicecross(im,3500,4000,5300,5850,res), slicecross(im,3500,4000,300,800,res), slicecross(im,1250,1600,5300,5850,res), slicecross(im,1250,1600,300,800,res)]
 	return res,crosses
 
-def prin(img):
-	img = img.convert('L')
-	# img.show()
-	im = np.array(img)
+def prin(img,ori):
+	im = np.array(img.convert('L'))
 	k = otsu(im)
 	res1 = limiarizar(im,k)
+
+	orig = ori.convert('L')
+
 	# for i in range(im.shape[0]//2):
 	# 	res1[i,2*i] = 0
 	# Image.fromarray(res1).show()
@@ -194,7 +157,7 @@ def prin(img):
 
 	# res1[]
 
-	res3,crosses = lookcross(im)
+	res2,crosses = lookcross(im)
 	sumx = 0
 	sumy = 0
 	for i,j in crosses:
@@ -202,13 +165,36 @@ def prin(img):
 		sumy += j
 	sumx = sumx // 4
 	sumy = sumy // 4
-	print(crosses,sumx,sumy)
-	res3[sumx-5:sumx+5,sumy-5:sumy+5] = np.uint8(255)
-	Image.fromarray(res3).show()
-	# img.rotate(-ang).show()
-
-	# res2 = laplaciano(res)
+	# print(crosses,sumx,sumy,suma)
+	# res2[sumx-5:sumx+5,sumy-5:sumy+5] = np.uint8(255)
 	# Image.fromarray(res2).show()
+	# img.rotate(-suma).show()
+
+	ang = np.arctan((crosses[0][0]-crosses[1][0])/(crosses[0][1]-crosses[1][1]))*180/math.pi
+	print(ang)
+
+	im3 = img.rotate(ang)
+	res3 = np.array(im3.convert('L'))
+	# res3[sumx-5:sumx+5,sumy-5:sumy+5,0] = np.uint8(255)
+	# Image.fromarray(res3).show()
+	_,crosses = lookcross(res3)
+	res4 = Image.fromarray(np.array(im3)[crosses[3][0]:crosses[0][0],crosses[3][1]:crosses[0][1],:])
+
+	res5 = limiarizar(np.array(orig),200)
+	_,crosses = lookcross(res5)
+	res6 = dilatar(np.uint8(255)-res5[crosses[3][0]:crosses[0][0],crosses[3][1]:crosses[0][1]],3)
+	res6 = Image.fromarray(res6)
+
+	res7 = res4.resize(res6.size)
+	# res7.show()
+	# res6.show()
+
+	res8 = np.array(res7,dtype=np.int16) + np.array(res6.convert('RGB'),dtype=np.int16)
+	res9 = np.array(res8.clip(min=0,max=255),dtype=np.uint8)
+	Image.fromarray(res9).show()
+
+	res10 = afinar(res9,size=3)
+	Image.fromarray(res10).show()
 
 
 def main(path='/Users/mthome/Dropbox/UFES/Processamento Digital de Imagens/trab/'):
@@ -218,15 +204,11 @@ def main(path='/Users/mthome/Dropbox/UFES/Processamento Digital de Imagens/trab/
 		pass
 	except:
 		print('error while creating output dir')
-	# orig = pngtorgb(Image.open(path+'original.png'))
-	# print(pca(np.array(orig)))
+	orig = pngtorgb(Image.open(path+'original.png'))
 	# im = pngtorgb(Image.open(path+'G0.png'))
-	# print(pca(np.array(im)))
 	# im = Image.open(path+'G1.png')
-	# print(pca(np.array(im)))
 	im = Image.open(path+'G2.png')
-	print(pca(np.array(im)))
-	prin(im)
+	prin(im,orig)
 
 	# im.rotate(ang*180/math.pi).show()
 
