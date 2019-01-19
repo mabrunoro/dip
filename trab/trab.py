@@ -6,6 +6,8 @@ import math
 import sys
 import os
 
+MAXIMOS = [1,5,10,50,100,500,1000]
+
 def erodir(im,size=5,dot=False):
 	res = np.zeros(im.shape, dtype=np.uint8)
 	side = size//2 if size > 1 else 1
@@ -140,6 +142,13 @@ def lookcross(im):
 		crosses = [slicecross(im,3500,4000,5300,5850), slicecross(im,3500,4000,300,800), slicecross(im,1250,1600,5300,5850), slicecross(im,1250,1600,300,800)]
 	return crosses
 
+def checkcolor(img):
+	clrs = img.mean(axis=1).mean(axis=0)
+	if(np.any(clrs < 250)):
+		return clrs
+	else:
+		return None
+
 def prin(img,ori):
 	im = np.array(img.convert('L'))
 	k = otsu(im)
@@ -178,30 +187,73 @@ def prin(img,ori):
 	# res9 = afinar(res8,size=3)
 	# Image.fromarray(res9).show()
 
+	curvas = [[None,-1,None,-1,None],[None,-1,None,-1,None],[None,-1,None,-1,None]]
 	if(ori.size != img.size):
 		rx = (crossimg[3][0]-crossimg[1][0])/(crossori[3][0]-crossori[1][0])
 		ry = (crossimg[3][1]-crossimg[2][1])/(crossori[3][1]-crossori[2][1])
 		for j in range(3):
+			# X
 			for i in range(7):
-				res2[crossimg[3][0]+round((j*188-752)*rx):crossimg[3][0]+round((j*188-693)*rx),crossimg[3][1]+round((i*256-503)*ry):crossimg[3][1]+round((i*256-440)*ry)] = np.uint8(0)
-			res2[crossimg[3][0]+round((j*188-752)*rx):crossimg[3][0]+round((j*188-693)*rx),crossimg[3][1]+round(1451*ry):crossimg[3][1]+round(1514*ry)] = np.uint8(0)
-			res2[crossimg[3][0]+round((j*188-752)*rx):crossimg[3][0]+round((j*188-693)*rx),crossimg[3][1]+round(2008*ry):crossimg[3][1]+round(2071*ry)] = np.uint8(0)
+				col = checkcolor(res1[crossimg[3][0]+round((j*188-752)*rx):crossimg[3][0]+round((j*188-693)*rx),crossimg[3][1]+round((i*256-503)*ry):crossimg[3][1]+round((i*256-440)*ry)])
+				if(col is not None):
+					curvas[j][0] = col
+					curvas[j][1] = i
+					break
+			col = checkcolor(res1[crossimg[3][0]+round((j*188-752)*rx):crossimg[3][0]+round((j*188-693)*rx),crossimg[3][1]+round(1451*ry):crossimg[3][1]+round(1514*ry)])
+			if(col is None):
+				col = checkcolor(res1[crossimg[3][0]+round((j*188-752)*rx):crossimg[3][0]+round((j*188-693)*rx),crossimg[3][1]+round(2008*ry):crossimg[3][1]+round(2071*ry)])
+				curvas[j][2] = True	# logaritmo
+			else:
+				curvas[j][2] = False	# linear
+
+			# Y
 			for i in range(7):
-				res2[crossimg[3][0]+round((j*188-752)*rx):crossimg[3][0]+round((j*188-693)*rx),crossimg[3][1]+round((i*256+2945)*ry):crossimg[3][1]+round((i*256+3008)*ry)] = np.uint8(0)
-			res2[crossimg[3][0]+round((j*188-752)*rx):crossimg[3][0]+round((j*188-693)*rx),crossimg[3][1]+round(4899*ry):crossimg[3][1]+round(4962*ry)] = np.uint8(0)
-			res2[crossimg[3][0]+round((j*188-752)*rx):crossimg[3][0]+round((j*188-693)*rx),crossimg[3][1]+round(5456*ry):crossimg[3][1]+round(5519*ry)] = np.uint8(0)
+				col = checkcolor(res1[crossimg[3][0]+round((j*188-752)*rx):crossimg[3][0]+round((j*188-693)*rx),crossimg[3][1]+round((i*256+2945)*ry):crossimg[3][1]+round((i*256+3008)*ry)])
+				if(col is not None):
+					# curvas[j][0] = col
+					curvas[j][3] = i
+					break
+			col = checkcolor(res1[crossimg[3][0]+round((j*188-752)*rx):crossimg[3][0]+round((j*188-693)*rx),crossimg[3][1]+round(4899*ry):crossimg[3][1]+round(4962*ry)])
+			if(col is None):
+				col = checkcolor(res1[crossimg[3][0]+round((j*188-752)*rx):crossimg[3][0]+round((j*188-693)*rx),crossimg[3][1]+round(5456*ry):crossimg[3][1]+round(5519*ry)])
+				curvas[j][4] = True	# logaritmo
+			else:
+				curvas[j][4] = False	# linear
 	else:
 		for j in range(3):
 			for i in range(7):
-				res2[crossori[3][0]-752+j*188:crossori[3][0]-693+j*188,crossori[3][1]-503+i*256:crossori[3][1]-440+i*256] = np.uint8(0)
-			res2[crossori[3][0]-752+j*188:crossori[3][0]-693+j*188,crossori[3][1]+1451:crossori[3][1]+1514] = np.uint8(0)
-			res2[crossori[3][0]-752+j*188:crossori[3][0]-693+j*188,crossori[3][1]+2008:crossori[3][1]+2071] = np.uint8(0)
+				col = checkcolor(res1[crossori[3][0]-752+j*188:crossori[3][0]-693+j*188,crossori[3][1]-503+i*256:crossori[3][1]-440+i*256])
+				if(col is not None):
+					curvas[j][0] = col
+					curvas[j][1] = i
+					break
+			col = checkcolor(res1[crossori[3][0]-752+j*188:crossori[3][0]-693+j*188,crossori[3][1]+1451:crossori[3][1]+1514])
+			if(col is None):
+				col = checkcolor(res1[crossori[3][0]-752+j*188:crossori[3][0]-693+j*188,crossori[3][1]+2008:crossori[3][1]+2071])
+				curvas[j][2] = True	# logaritmo
+			else:
+				curvas[j][2] = False	# linear
 			for i in range(7):
-				res2[crossori[3][0]-752+j*188:crossori[3][0]-693+j*188,crossori[3][1]+2945+i*256:crossori[3][1]+3008+i*256] = np.uint8(0)
-			res2[crossori[3][0]-752+j*188:crossori[3][0]-693+j*188,crossori[3][1]+4899:crossori[3][1]+4962] = np.uint8(0)
-			res2[crossori[3][0]-752+j*188:crossori[3][0]-693+j*188,crossori[3][1]+5456:crossori[3][1]+5519] = np.uint8(0)
+				col = checkcolor(res1[crossori[3][0]-752+j*188:crossori[3][0]-693+j*188,crossori[3][1]+2945+i*256:crossori[3][1]+3008+i*256])
+				if(col is not None):
+					# curvas[j][0] = col
+					curvas[j][3] = i
+					break
+			col = checkcolor(res1[crossori[3][0]-752+j*188:crossori[3][0]-693+j*188,crossori[3][1]+4899:crossori[3][1]+4962])
+			if(col is None):
+				col = checkcolor(res1[crossori[3][0]-752+j*188:crossori[3][0]-693+j*188,crossori[3][1]+5456:crossori[3][1]+5519])
+				curvas[j][4] = True	# logaritmo
+			else:
+				curvas[j][4] = False	# linear
 
-	Image.fromarray(res2).show()
+	for i in range(3):
+		print('Curva',i+1)
+		print('\tRGB:'curvas[i][0][0],curvas[i][0][1],curvas[i][0][2])
+		print('\tXmax:',MAXIMOS[curvas[i][1]])
+		print('\tEscala X:','log' if curvas[i][2] else 'linear')
+		print('\tYmax:',MAXIMOS[curvas[i][3]])
+		print('\tEscala Y:','log' if curvas[i][4] else 'linear')
+	Image.fromarray(res1).show()
 
 
 def main(path='/Users/mthome/Dropbox/UFES/Processamento Digital de Imagens/trab/'):
