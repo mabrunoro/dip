@@ -134,67 +134,74 @@ def slicecross(im,i1,i2,j1,j2,res=None):
 					return (i+t[0],j+t[1])
 
 def lookcross(im):
-	res = np.zeros(im.shape, dtype=np.uint8)
-	# 2181-1062
 	if(im.shape == (5100, 7014)):
-		crosses = [slicecross(im,3750,4750,5750,6500,res), slicecross(im,3750,4750,400,1150,res), slicecross(im,1500,2000,5750,6500,res), slicecross(im,1500,2000,400,1150,res)]
+		crosses = [slicecross(im,3750,4750,5750,6500), slicecross(im,3750,4750,400,1150), slicecross(im,1500,2000,5750,6500), slicecross(im,1500,2000,400,1150)]
 	else:
-		crosses = [slicecross(im,3500,4000,5300,5850,res), slicecross(im,3500,4000,300,800,res), slicecross(im,1250,1600,5300,5850,res), slicecross(im,1250,1600,300,800,res)]
-	return res,crosses
+		crosses = [slicecross(im,3500,4000,5300,5850), slicecross(im,3500,4000,300,800), slicecross(im,1250,1600,5300,5850), slicecross(im,1250,1600,300,800)]
+	return crosses
 
 def prin(img,ori):
 	im = np.array(img.convert('L'))
 	k = otsu(im)
-	res1 = limiarizar(im,k)
+
+	crossimg = lookcross(limiarizar(im,k))
+	# crossimg = lookcross(im)
+	# sumx = 0
+	# sumy = 0
+	# for i,j in crossimg:
+	# 	sumx += i
+	# 	sumy += j
+	# sumx = sumx // 4
+	# sumy = sumy // 4
+
+	angimg = np.arctan((crossimg[0][0]-crossimg[1][0])/(crossimg[0][1]-crossimg[1][1]))*180/math.pi
+	imgrot = img.rotate(angimg)	# img rotacionada colorida
+	res1 = np.array(imgrot)
+
+	res2 = np.array(imgrot.convert('L'))	# img rotacionada e em escala de cinza - array
+	crossimg = lookcross(limiarizar(res2,k))
+	# crossimg = lookcross(res2)
+	# imgcross = Image.fromarray(res1[crossimg[3][0]:crossimg[0][0],crossimg[3][1]:crossimg[0][1],:])	# img rotacionada colorida - somente plano dos eixos
 
 	orig = ori.convert('L')
+	res3 = limiarizar(np.array(orig),200)	# original binarizada
+	crossori = lookcross(res3)
+	# res4 = dilatar(np.uint8(255)-res3[crossori[3][0]:crossori[0][0],crossori[3][1]:crossori[0][1]],3)
+	# res5 = Image.fromarray(res4)
+	#
+	# res6 = imgcross.resize(res5.size)
+	#
+	# res7 = np.array(res6,dtype=np.int16) + np.array(res5.convert('RGB'),dtype=np.int16)
+	# res8 = np.array(res7.clip(min=0,max=255),dtype=np.uint8)
+	# Image.fromarray(res8).show()
+	#
+	# res9 = afinar(res8,size=3)
+	# Image.fromarray(res9).show()
 
-	# for i in range(im.shape[0]//2):
-	# 	res1[i,2*i] = 0
-	# Image.fromarray(res1).show()
-	# res2 = dilatar(erodir(im,size=3),size=3)
-	# Image.fromarray(res2).show()
+	if(ori.size != img.size):
+		rx = (crossimg[3][0]-crossimg[1][0])/(crossori[3][0]-crossori[1][0])
+		ry = (crossimg[3][1]-crossimg[2][1])/(crossori[3][1]-crossori[2][1])
+		for j in range(3):
+			for i in range(7):
+				res2[crossimg[3][0]+round((j*188-752)*rx):crossimg[3][0]+round((j*188-693)*rx),crossimg[3][1]+round((i*256-503)*ry):crossimg[3][1]+round((i*256-440)*ry)] = np.uint8(0)
+			res2[crossimg[3][0]+round((j*188-752)*rx):crossimg[3][0]+round((j*188-693)*rx),crossimg[3][1]+round(1451*ry):crossimg[3][1]+round(1514*ry)] = np.uint8(0)
+			res2[crossimg[3][0]+round((j*188-752)*rx):crossimg[3][0]+round((j*188-693)*rx),crossimg[3][1]+round(2008*ry):crossimg[3][1]+round(2071*ry)] = np.uint8(0)
+			for i in range(7):
+				res2[crossimg[3][0]+round((j*188-752)*rx):crossimg[3][0]+round((j*188-693)*rx),crossimg[3][1]+round((i*256+2945)*ry):crossimg[3][1]+round((i*256+3008)*ry)] = np.uint8(0)
+			res2[crossimg[3][0]+round((j*188-752)*rx):crossimg[3][0]+round((j*188-693)*rx),crossimg[3][1]+round(4899*ry):crossimg[3][1]+round(4962*ry)] = np.uint8(0)
+			res2[crossimg[3][0]+round((j*188-752)*rx):crossimg[3][0]+round((j*188-693)*rx),crossimg[3][1]+round(5456*ry):crossimg[3][1]+round(5519*ry)] = np.uint8(0)
+	else:
+		for j in range(3):
+			for i in range(7):
+				res2[crossori[3][0]-752+j*188:crossori[3][0]-693+j*188,crossori[3][1]-503+i*256:crossori[3][1]-440+i*256] = np.uint8(0)
+			res2[crossori[3][0]-752+j*188:crossori[3][0]-693+j*188,crossori[3][1]+1451:crossori[3][1]+1514] = np.uint8(0)
+			res2[crossori[3][0]-752+j*188:crossori[3][0]-693+j*188,crossori[3][1]+2008:crossori[3][1]+2071] = np.uint8(0)
+			for i in range(7):
+				res2[crossori[3][0]-752+j*188:crossori[3][0]-693+j*188,crossori[3][1]+2945+i*256:crossori[3][1]+3008+i*256] = np.uint8(0)
+			res2[crossori[3][0]-752+j*188:crossori[3][0]-693+j*188,crossori[3][1]+4899:crossori[3][1]+4962] = np.uint8(0)
+			res2[crossori[3][0]-752+j*188:crossori[3][0]-693+j*188,crossori[3][1]+5456:crossori[3][1]+5519] = np.uint8(0)
 
-	# res1[]
-
-	res2,crosses = lookcross(im)
-	sumx = 0
-	sumy = 0
-	for i,j in crosses:
-		sumx += i
-		sumy += j
-	sumx = sumx // 4
-	sumy = sumy // 4
-	# print(crosses,sumx,sumy,suma)
-	# res2[sumx-5:sumx+5,sumy-5:sumy+5] = np.uint8(255)
-	# Image.fromarray(res2).show()
-	# img.rotate(-suma).show()
-
-	ang = np.arctan((crosses[0][0]-crosses[1][0])/(crosses[0][1]-crosses[1][1]))*180/math.pi
-	print(ang)
-
-	im3 = img.rotate(ang)
-	res3 = np.array(im3.convert('L'))
-	# res3[sumx-5:sumx+5,sumy-5:sumy+5,0] = np.uint8(255)
-	# Image.fromarray(res3).show()
-	_,crosses = lookcross(res3)
-	res4 = Image.fromarray(np.array(im3)[crosses[3][0]:crosses[0][0],crosses[3][1]:crosses[0][1],:])
-
-	res5 = limiarizar(np.array(orig),200)
-	_,crosses = lookcross(res5)
-	res6 = dilatar(np.uint8(255)-res5[crosses[3][0]:crosses[0][0],crosses[3][1]:crosses[0][1]],3)
-	res6 = Image.fromarray(res6)
-
-	res7 = res4.resize(res6.size)
-	# res7.show()
-	# res6.show()
-
-	res8 = np.array(res7,dtype=np.int16) + np.array(res6.convert('RGB'),dtype=np.int16)
-	res9 = np.array(res8.clip(min=0,max=255),dtype=np.uint8)
-	Image.fromarray(res9).show()
-
-	res10 = afinar(res9,size=3)
-	Image.fromarray(res10).show()
+	Image.fromarray(res2).show()
 
 
 def main(path='/Users/mthome/Dropbox/UFES/Processamento Digital de Imagens/trab/'):
