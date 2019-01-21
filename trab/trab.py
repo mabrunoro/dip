@@ -156,7 +156,7 @@ def limpar(img,size=13):
 				img[i,j] = False
 	return img
 
-def prin(img,ori,pontos=30):
+def prin(img,ori,pontos=30,nome=''):
 	im = np.array(img.convert('L'))
 	k = otsu(im)
 
@@ -299,7 +299,7 @@ def prin(img,ori,pontos=30):
 		grupos[cor].append([X,Y])	# X e Y são trocados no numpy
 
 	for i in range(len(grupos)):
-		with open('output/curva'+str(i)+'.txt','w') as f:
+		with open('output/curva'+nome+str(i)+'.txt','w') as f:
 			f.write('Cor RGB: '+str(curvas[i][0]))
 			# print(len(grupos[i]))
 			passo = (len(grupos[i])//pontos) if (pontos < len(grupos[i])) else 1
@@ -315,10 +315,12 @@ def main(pontos=30,path='/Users/mthome/Dropbox/UFES/Processamento Digital de Ima
 	except:
 		print('error while creating output dir')
 	orig = pngtorgb(Image.open(path+'original.png'))
-	# im = pngtorgb(Image.open(path+'G0.png'))
-	# im = Image.open(path+'G1.png')
+	im = pngtorgb(Image.open(path+'G0.png'))
+	prin(im,orig,pontos,'G0')
+	im = Image.open(path+'G1.png')
+	prin(im,orig,pontos,'G1')
 	im = Image.open(path+'G2.png')
-	prin(im,orig,pontos)
+	prin(im,orig,pontos,'G2')
 
 
 if(__name__ == '__main__'):
