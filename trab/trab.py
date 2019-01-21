@@ -274,8 +274,8 @@ def prin(img,ori,pontos=30):
 	else:
 		print('Não há curvas identificadas')
 		sys.exit(0)
-	centroX = res6.size[0]
-	centroY = res6.size[1]
+	centroX = res6.size[0]//2
+	centroY = res6.size[1]//2
 	# for i,j in crossori:
 	# 	centroX += i
 	# 	centroY += j
@@ -294,8 +294,8 @@ def prin(img,ori,pontos=30):
 			cor = corp[0] if (np.abs(varponto - var0) < np.abs(varponto - var1)) else corp[1]
 		else:
 			cor = corp[0]
-		X = ('10^'+str((j-centroY)*MAXIMOS[curvas[cor][1]]/2084)) if curvas[cor][2] else str((j-centroY)*MAXIMOS[curvas[cor][1]]/2084)
-		Y = ('10^'+str((centroX-i)*MAXIMOS[curvas[cor][3]]/1042)) if curvas[cor][4] else str((centroX-i)*MAXIMOS[curvas[cor][3]]/1042)
+		X = ('10^'+str((j-centroX)*MAXIMOS[curvas[cor][1]]/2084)) if curvas[cor][2] else str((j-centroX)*MAXIMOS[curvas[cor][1]]/2084)
+		Y = ('10^'+str((centroY-i)*MAXIMOS[curvas[cor][3]]/1042)) if curvas[cor][4] else str((centroY-i)*MAXIMOS[curvas[cor][3]]/1042)
 		grupos[cor].append([X,Y])	# X e Y são trocados no numpy
 
 	for i in range(len(grupos)):
